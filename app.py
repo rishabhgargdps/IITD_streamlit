@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[ ]:
+
+
 import streamlit as st
 import io
 import string
@@ -10,6 +13,12 @@ import pandas as pd
 import numpy as np
 import joblib as joblib
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import r2_score
 
 st.title('RUL Predictor')
 
@@ -41,7 +50,7 @@ if dataset_name == 'RMS Prediction':
 
     while uploaded_file is None:
         time.sleep(1)
-        time_counter += 7
+        time_counter += 3
         if time_counter > 20:break
 
     if uploaded_file is not None:
@@ -52,30 +61,38 @@ if dataset_name == 'RMS Prediction':
 
     df = read_preprocess(uploaded_file)
 
-    def get_model(file):
-        regressor = joblib.load(file)
-        return regressor
+    reg_name = st.sidebar.selectbox(
+        'Select regressor',
+        ('Linear regressor', 'SVR')
+    )
+    
+    def add_parameter_ui(clf_name):
+        params = dict()
+        if clf_name == 'SVR':
+            degree = st.sidebar.slider('degree', 1, 10)
+            params['degree'] = degree
+        return params
 
-    uploaded_file = st.file_uploader("Please upload the rms regressor saved model",type=['pkl'])
+    params = add_parameter_ui(reg_name)
+    
+    def get_regressor(clf_name, params):
+        clf = None
+        if clf_name == 'SVR':
+            clf = SVR(kernel = 'poly', degree = params['degree'])
+        elif clf_name == 'Linear regressor':
+            clf = LinearRegression()
+        return clf
 
-    time_counter = 0
-
-    while uploaded_file is None:
-        time.sleep(1)
-        time_counter += 7
-        if time_counter > 15:break
-    if uploaded_file is not None:
-        st.write("Model uploaded succesfully")
-    else:
-        raise ValueError("This isn't a file")
-
-    regressor = get_model(uploaded_file) 
+    regressor = get_regressor(reg_name, params)
 
     #### REGRESSION ####
-
-    X_test = df.iloc[:, 0:5]
-    y_test = df["RMS(g)"]
-
+    
+    st.write("Training the model...")
+    X = df.iloc[:, 0:5]
+    y = df["RMS(g)"]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20)
+    regressor.fit(X_train, y_train)
+    
     # predictions
     st.write("Returning the predictions...")
     y_predict = regressor.predict(X_test)
@@ -86,14 +103,31 @@ if dataset_name == 'RMS Prediction':
     st.write("Plotting the results...")
     x_array = list(range(1, y_predict.shape[0]+1))
     fig = plt.figure()
-    plt.scatter(x_array, y_predict)
-    plt.scatter(x_array, y_test)
+    plt.scatter(x_array, y_predict, label = "Predicted")
+    plt.scatter(x_array, y_test, label = "Actual values")
 
     plt.xlabel('Experiment Number')
     plt.ylabel('RMS')
+    plt.legend(loc = 2)
 
     #plt.show()
     st.pyplot(fig)
+    
+    #### PERFORMANCE ANALYSIS ####
+    st.write("Accuracy metrics...")
+    st.write("RMSE")
+    RMS_error = mean_squared_error(y_test, y_predict)
+    st.write(RMS_error)
+    st.write("Mean Absolute Error")
+    MA_error = mean_absolute_error(y_test, y_predict)
+    st.write(MA_error)
+    st.write("R2 Score")
+    r2 = r2_score(y_test, y_predict)
+    st.write(r2)
+    st.write("Adjusted R2 Score")
+    adj_r2_score = 1 - ((1-r2)*(61-1)/(61-5-1))
+    st.write(adj_r2_score)
+    
     
 elif dataset_name == 'Slope Prediction':
     def read_preprocess(file):
@@ -111,7 +145,7 @@ elif dataset_name == 'Slope Prediction':
 
     while uploaded_file is None:
         time.sleep(1)
-        time_counter += 7
+        time_counter += 3
         if time_counter > 20:break
 
     if uploaded_file is not None:
@@ -122,29 +156,38 @@ elif dataset_name == 'Slope Prediction':
 
     df = read_preprocess(uploaded_file)
 
-    def get_model(file):
-        regressor = joblib.load(file)
-        return regressor
+    reg_name = st.sidebar.selectbox(
+        'Select regressor',
+        ('Linear regressor', 'SVR')
+    )
+    
+    def add_parameter_ui(clf_name):
+        params = dict()
+        if clf_name == 'SVR':
+            degree = st.sidebar.slider('degree', 1, 10)
+            params['degree'] = degree
+        return params
 
-    uploaded_file = st.file_uploader("Please upload the slope regressor saved model",type=['pkl'])
-
-    time_counter = 0
-
-    while uploaded_file is None:
-        time.sleep(1)
-        time_counter += 7
-        if time_counter > 15:break
-    if uploaded_file is not None:
-        st.write("Model uploaded succesfully")
-    else:
-        raise ValueError("This isn't a file")
-
-    regressor = get_model(uploaded_file) 
+    params = add_parameter_ui(reg_name)
+    
+    def get_regressor(clf_name, params):
+        clf = None
+        if clf_name == 'SVR':
+            clf = SVR(kernel = 'poly', degree = params['degree'])
+        elif clf_name == 'Linear regressor':
+            clf = LinearRegression()
+        return clf
+    
+    regressor = get_regressor(reg_name, params)
 
     #### REGRESSION ####
 
-    X_test = df.iloc[:, 0:5]
-    y_test = df["Slope of the line"]
+    st.write("Training the model...")
+    X = df.iloc[:, 0:5]
+    y = df["Slope of the line"]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.20)
+    regressor.fit(X_train, y_train)
+    
 
     # predictions
     st.write("Returning the predictions...")
@@ -156,11 +199,34 @@ elif dataset_name == 'Slope Prediction':
     st.write("Plotting the results...")
     x_array = list(range(1, y_predict.shape[0]+1))
     fig = plt.figure()
-    plt.scatter(x_array, y_predict)
-    plt.scatter(x_array, y_test)
+    plt.scatter(x_array, y_predict, label = "Predicted")
+    plt.scatter(x_array, y_test, label = "Actual values")
 
     plt.xlabel('Experiment Number')
     plt.ylabel('Slope')
+    plt.legend(loc = 2)
 
     #plt.show()
     st.pyplot(fig)
+    
+    #### PERFORMANCE ANALYSIS ####
+    st.write("Accuracy metrics...")
+    st.write("RMSE")
+    RMS_error = mean_squared_error(y_test, y_predict)
+    st.write(RMS_error)
+    st.write("Mean Absolute Error")
+    MA_error = mean_absolute_error(y_test, y_predict)
+    st.write(MA_error)
+    st.write("R2 Score")
+    r2 = r2_score(y_test, y_predict)
+    st.write(r2)
+    st.write("Adjusted R2 Score")
+    adj_r2_score = 1 - ((1-r2)*(61-1)/(61-5-1))
+    st.write(adj_r2_score)
+
+
+# In[ ]:
+
+
+
+
