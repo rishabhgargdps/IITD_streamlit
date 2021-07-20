@@ -8,9 +8,7 @@ import time
 import os
 import pandas as pd
 import numpy as np
-from flask import Flask, jsonify, request
 import joblib as joblib
-import json
 import matplotlib.pyplot as plt
 
 st.title('RUL Predictor')
