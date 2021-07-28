@@ -347,18 +347,4 @@ elif dataset_name == 'Slope Prediction':
     st.write("Adjusted R2 Score")
     adj_r2_score = 1 - ((1-r2)*(61-1)/(61-5-1))
     st.write(adj_r2_score)
-
-
-# In[ ]:
-
-
-get_ipython().system('jupyter nbconvert   --to script streamlit_final.ipynb')
-get_ipython().system("awk '!/ipython/' streamlit_final.py >  temp.py && mv temp.py app.py && rm streamlit_final.py")
-get_ipython().system('streamlit run app.py')
-
-
-# In[ ]:
-
-
-
-
+    
