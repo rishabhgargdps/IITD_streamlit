@@ -11,9 +11,7 @@ import time
 import os
 import pandas as pd
 import numpy as np
-from flask import Flask, jsonify, request
 import joblib as joblib
-import json
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVR
